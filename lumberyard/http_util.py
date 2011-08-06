@@ -8,7 +8,7 @@ import os
 import time
 import urllib
 
-def compute_uri(subdir, key, **kwargs):
+def compute_uri(sub_dir, key=None, **kwargs):
     """
     Create the REST URI sent to the server
     """    
@@ -18,7 +18,7 @@ def compute_uri(subdir, key, **kwargs):
     else:
         path = os.path.join(os.sep, sub_dir)
     if len(kwargs) > 0:
-        path = "?".join([path, urllib.urlencode(kwargs.items), ])
+        path = "?".join([path, urllib.urlencode(kwargs.items()), ])
     return path
 
 def current_timestamp():
