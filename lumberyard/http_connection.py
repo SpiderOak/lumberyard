@@ -12,7 +12,12 @@ import logging
 from lumberyard.http_util import current_timestamp
 
 class HTTPRequestError(Exception):
-    pass
+    def __init__(self, status, reason):
+        self.status = status
+        self.reason = reason
+        Exception.__init__(self, self.__str__())
+    def __str__(self):
+        return "(%s) %s" % (self.status, self.reason, )
 
 def _compute_authentication_string(
     user_name, auth_key, auth_key_id, method, timestamp
@@ -61,11 +66,12 @@ class HTTPConnection(httplib.HTTPConnection):
 
         response = httplib.HTTPConnection.getresponse(self)
         if response.status != httplib.OK:
-            message = "request failed %s %s" % (
+            self._log.error("request failed %s %s" % (
                 response.status, response.reason, 
-            ) 
-            self._log.error(message)
-            raise HTTPRequestError(message)
+            )) 
+            self.close()
+            self.connect()
+            raise HTTPRequestError(response.status, response.reason)
 
         return response
 
