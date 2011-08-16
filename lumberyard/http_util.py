@@ -8,6 +8,8 @@ import os
 import time
 import urllib
 
+meta_prefix = "__nimbus_io__"
+
 def compute_uri(sub_dir, key=None, **kwargs):
     """
     Create the REST URI sent to the server
