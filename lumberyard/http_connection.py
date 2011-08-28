@@ -20,22 +20,22 @@ class HTTPRequestError(Exception):
         return "(%s) %s" % (self.status, self.reason, )
 
 def _compute_authentication_string(
-    user_name, auth_key, auth_key_id, method, timestamp
+    user_name, auth_key, auth_key_id, method, timestamp, uri
 ):
     """
     Compute the authentication hmac sent to the server
     """
-    message = "\n".join([user_name, method, str(timestamp)])
+    message = "\n".join([user_name, method, str(timestamp), uri])
     hmac_object = hmac.new(
         auth_key,
         message,
         hashlib.sha256
     )
-    return "DIYAPI %s:%s" % (auth_key_id, hmac_object.hexdigest(), )
+    return "NIMBUS.IO %s:%s" % (auth_key_id, hmac_object.hexdigest(), )
 
 class HTTPConnection(httplib.HTTPConnection):
     """
-    DIY wrapper for httplib.HTTPConnection
+    nimbus.io wrapper for httplib.HTTPConnection
     """
     def __init__(self, base_address, user_name, auth_key, auth_id):
         httplib.HTTPConnection.__init__(self, base_address)
@@ -51,13 +51,14 @@ class HTTPConnection(httplib.HTTPConnection):
             self._auth_key,
             self._auth_id,
             method, 
-            timestamp
+            timestamp,
+            uri
         )
 
         headers.update({
             "Authorization"         : authentication_string,
-            "X-DIYAPI-Timestamp"    : str(timestamp),
-            "agent"                 : 'diy-tool/1.0'
+            "x-nimbus-io-timestamp" : str(timestamp),
+            "agent"                 : 'lumberyard/1.0'
         })
 
         httplib.HTTPConnection.request(
