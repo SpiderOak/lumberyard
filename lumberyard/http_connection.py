@@ -2,14 +2,13 @@
 """
 HTTPConnection.py
 
-$NAME wrapper for httplib.HTTPConnection
+nimbus.io wrapper for httplib.HTTPConnection
 """
-import hashlib
-import hmac
 import httplib
 import logging
 
-from lumberyard.http_util import current_timestamp
+from lumberyard.http_util import current_timestamp, \
+    compute_authentication_string
 
 class HTTPRequestError(Exception):
     def __init__(self, status, reason):
@@ -18,20 +17,6 @@ class HTTPRequestError(Exception):
         Exception.__init__(self, self.__str__())
     def __str__(self):
         return "(%s) %s" % (self.status, self.reason, )
-
-def _compute_authentication_string(
-    user_name, auth_key, auth_key_id, method, timestamp, uri
-):
-    """
-    Compute the authentication hmac sent to the server
-    """
-    message = "\n".join([user_name, method, str(timestamp), uri])
-    hmac_object = hmac.new(
-        auth_key,
-        message,
-        hashlib.sha256
-    )
-    return "NIMBUS.IO %s:%s" % (auth_key_id, hmac_object.hexdigest(), )
 
 class HTTPConnection(httplib.HTTPConnection):
     """
@@ -46,10 +31,10 @@ class HTTPConnection(httplib.HTTPConnection):
 
     def request(self, method, uri, body=None, headers=dict()):
         timestamp = current_timestamp()
-        authentication_string = _compute_authentication_string(
-            self._user_name, 
-            self._auth_key,
+        authentication_string = compute_authentication_string(
             self._auth_id,
+            self._auth_key,
+            self._user_name, 
             method, 
             timestamp,
             uri

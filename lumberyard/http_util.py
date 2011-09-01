@@ -2,13 +2,29 @@
 """
 http_util.py
 
-utility functions for connecting with $NAME via HTTP
+utility functions for connecting with nimbus.io via HTTP
 """
+import hashlib
+import hmac
 import os
 import time
 import urllib
 
 meta_prefix = "__nimbus_io__"
+
+def compute_authentication_string(
+    auth_key_id,  auth_key, user_name,  method, timestamp, uri
+):
+    """
+    Compute the authentication hmac sent to the server
+    """
+    message = "\n".join([user_name, method, str(timestamp), uri])
+    hmac_object = hmac.new(
+        auth_key,
+        message,
+        hashlib.sha256
+    )
+    return "NIMBUS.IO %s:%s" % (auth_key_id, hmac_object.hexdigest(), )
 
 def compute_uri(sub_dir, key=None, **kwargs):
     """
