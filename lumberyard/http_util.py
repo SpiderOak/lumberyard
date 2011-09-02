@@ -11,6 +11,43 @@ import time
 import urllib
 
 meta_prefix = "__nimbus_io__"
+_host_port = 8088
+_default_collection_prefix = "dd"
+_reserved_collection_prefix = "rr"
+
+def compute_default_collection_name(username):
+    """
+    return the name of this customer's default collection
+    """
+    return "-".join([_default_collection_prefix, username])
+
+def compute_reserved_collection_name(username, collection_name):
+    """
+    return the decorated name of a reserved collection name
+    """
+    return "-".join([_reserved_collection_prefix, username, collection_name])
+
+def compute_hostname(collection_name):
+    """
+    return the DNS hostname for this collection
+    """
+    hostname = ".".join([collection_name, "nimbus", "io"])
+    hostname_with_port = ":".join([hostname, "%s" % _host_port])
+    return hostname_with_port
+
+def compute_default_hostname(username):
+    """
+    return the DNS hostname for this customer's default collection
+    """
+    return compute_hostname(compute_default_collection_name(username))
+
+def compute_reserved_hostname(username, collection_name):
+    """
+    return the DNS hostname for one of this customer's reserved collection
+    """
+    return compute_hostname(
+        compute_reserved_collection_name(username, collection_name)
+    )
 
 def compute_authentication_string(
     auth_key_id,  auth_key, user_name,  method, timestamp, uri
