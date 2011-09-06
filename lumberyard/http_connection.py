@@ -22,12 +22,16 @@ class HTTPConnection(httplib.HTTPConnection):
     """
     nimbus.io wrapper for httplib.HTTPConnection
     """
-    def __init__(self, base_address, user_name, auth_key, auth_id):
+    def __init__(
+        self, base_address, user_name, auth_key, auth_id, debug_level=0
+    ):
         httplib.HTTPConnection.__init__(self, base_address)
         self._log = logging.getLogger("HTTPConnection")
         self._user_name = user_name
         self._auth_key = auth_key
         self._auth_id = auth_id
+        self.set_debuglevel(debug_level)
+        self.connect()
 
     def request(self, method, uri, body=None, headers=dict()):
         timestamp = current_timestamp()
@@ -50,7 +54,7 @@ class HTTPConnection(httplib.HTTPConnection):
             self, method, uri, body=body, headers=headers
         )
 
-        response = httplib.HTTPConnection.getresponse(self)
+        response = self.getresponse()
         if response.status != httplib.OK:
             self._log.error("request failed %s %s" % (
                 response.status, response.reason, 
