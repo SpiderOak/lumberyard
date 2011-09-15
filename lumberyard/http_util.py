@@ -67,13 +67,20 @@ def compute_uri(sub_dir, key=None, **kwargs):
     """
     Create the REST URI sent to the server
     """    
-    work_key = (urllib.quote_plus(key) if key is not None else None)
-    if work_key is not None:
-        path = os.path.join(os.sep, sub_dir, work_key)
+    # do not use os.path here, we're not dealing wiht a real path
+    # but os.path tries to fix things
+
+    if sub_dir[0] != os.sep:
+        path = "".join([os.sep, sub_dir, ])
     else:
-        path = os.path.join(os.sep, sub_dir)
+        path = sub_dir
+
+    if key is not None:
+        path = os.sep.join([path, key, ])
+
     if len(kwargs) > 0:
         path = "?".join([path, urllib.urlencode(kwargs.items()), ])
+
     return path
 
 def current_timestamp():
