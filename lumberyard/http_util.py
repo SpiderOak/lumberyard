@@ -27,25 +27,25 @@ def compute_reserved_collection_name(username, collection_name):
     """
     return "-".join([_reserved_collection_prefix, username, collection_name])
 
-def compute_hostname(collection_name):
+def compute_collection_hostname(collection_name):
     """
     return the DNS hostname for this collection
     """
-    hostname = ".".join([collection_name, "nimbus", "io"])
+    return ".".join([collection_name, compute_default_hostname()])
+
+def compute_default_hostname():
+    """
+    return the DNS hostname for the default collection
+    """
+    hostname = ".".join(["nimbus", "io"])
     hostname_with_port = ":".join([hostname, "%s" % _host_port])
     return hostname_with_port
-
-def compute_default_hostname(username):
-    """
-    return the DNS hostname for this customer's default collection
-    """
-    return compute_hostname(compute_default_collection_name(username))
 
 def compute_reserved_hostname(username, collection_name):
     """
     return the DNS hostname for one of this customer's reserved collection
     """
-    return compute_hostname(
+    return compute_collection_hostname(
         compute_reserved_collection_name(username, collection_name)
     )
 
