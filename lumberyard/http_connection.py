@@ -10,13 +10,26 @@ import logging
 from lumberyard.http_util import current_timestamp, \
     compute_authentication_string
 
-class HTTPRequestError(Exception):
+class LumberyardHTTPError(Exception):
+    """
+    a status of other than 200 OK has been retruned by the HTTP server
+    """
     def __init__(self, status, reason):
         self.status = status
         self.reason = reason
         Exception.__init__(self, self.__str__())
     def __str__(self):
         return "(%s) %s" % (self.status, self.reason, )
+
+class LumberyardRetryableHTTPError(LumberyardHTTPError):
+    """
+    a status of 503 Service unavailable was returned by the HTTP server
+    but the request can b retried after an interval
+    """
+    def __init__(self, retry_after):
+        LumberyardHTTPError.__init__(self, 503, "Service unavailable")
+        self.retry_after = retry_after
+
 
 class HTTPConnection(httplib.HTTPConnection):
     """
@@ -61,7 +74,22 @@ class HTTPConnection(httplib.HTTPConnection):
             )) 
             self.close()
             self.connect()
-            raise HTTPRequestError(response.status, response.reason)
+
+            # if we got 503 service unavailable
+            # and there is a retry_after header with an integer value 
+            # give the caller a chance to retry
+            if response.status == 503:
+                retry_after = response.getheader("retry_after", None)
+                if retry_after is not None:
+                    seconds = None
+                    try:
+                        seconds = int(retry_after)
+                    except Exception:
+                        pass
+                    if seconds is not None and seconds > 0:
+                        raise LumberyardRetryableHTTPError(seconds)
+
+            raise LumberyardHTTPError(response.status, response.reason)
 
         return response
 
