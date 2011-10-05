@@ -79,7 +79,7 @@ class HTTPConnection(httplib.HTTPConnection):
             # and there is a retry_after header with an integer value 
             # give the caller a chance to retry
             if response.status == 503:
-                retry_after = response.getheader("retry_after", None)
+                retry_after = response.getheader("Retry-After", None)
                 if retry_after is not None:
                     seconds = None
                     try:
