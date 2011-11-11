@@ -11,7 +11,8 @@ import time
 import urllib
 
 meta_prefix = "__nimbus_io__"
-_host_port = 8088
+# TODO ssl
+_host_port = int(os.environ.get("NIMBUS_IO_SERVICE_PORT", "443"))
 _default_collection_prefix = "dd"
 _reserved_collection_prefix = "rr"
 
