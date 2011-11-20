@@ -33,7 +33,26 @@ class LumberyardRetryableHTTPError(LumberyardHTTPError):
 
 class HTTPConnection(httplib.HTTPConnection):
     """
-    nimbus.io wrapper for httplib.HTTPConnection
+    base_address
+        An hostname or address that should resolve to a socket connection on a 
+        server.
+
+        For example ``nimbus.io`` or ``127.0.0.1:8088``
+
+    user_name
+        name of a valid nimbus.io user
+
+    auth_key
+        an authentication key valid for the user
+
+    auth_id
+        the id number of the authentication key
+
+    debug level
+        debug level of HTTPConnection base class 
+
+    nimbus.io wrapper for httplib.HTTPConnection. This constructor performs
+    the initial connection but does not send a request.
     """
     def __init__(
         self, base_address, user_name, auth_key, auth_id, debug_level=0
@@ -47,6 +66,22 @@ class HTTPConnection(httplib.HTTPConnection):
         self.connect()
 
     def request(self, method, uri, body=None, headers=dict()):
+        """
+        method
+            one of GET, POST, DELETE, HEAD
+
+        uri
+            the REST command for this request
+
+        body
+            if present, must be a string or an open file object
+
+        headers
+            a dictionary of key/value pairs to be added to the HTTP headers
+
+        send an HTTP request over the connection
+        return a HTTPResponse object, or raise an exception
+        """
         timestamp = current_timestamp()
         authentication_string = compute_authentication_string(
             self._auth_id,

@@ -54,7 +54,26 @@ def compute_authentication_string(
     auth_key_id,  auth_key, user_name,  method, timestamp, uri
 ):
     """
-    Compute the authentication hmac sent to the server
+    auth_key_id
+        the id of the authentication key
+
+    auth_key
+        authentication_key
+
+    user_name
+        name of a valid nimbus.io user
+
+    method
+        one of GET, POST, DELETE, HEAD
+        This must be the mehtod used in the request
+
+    timestamp
+        the value of the HTTP header ``x-nimbus-io-timestamp``
+
+    uri
+        the REST command for the request
+
+    Compute the authentication hmac that will be sent to the server
     """
     message = "\n".join([user_name, method, str(timestamp), uri])
     hmac_object = hmac.new(
@@ -68,7 +87,7 @@ def compute_uri(sub_dir, key=None, **kwargs):
     """
     Create the REST URI sent to the server
     """    
-    # do not use os.path here, we're not dealing wiht a real path
+    # do not use os.path here, we're not dealing with a real path
     # but os.path tries to fix things
 
     if sub_dir[0] != os.sep:
