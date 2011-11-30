@@ -12,6 +12,7 @@ import urllib
 
 meta_prefix = "__nimbus_io__"
 # TODO ssl
+_service_domain = os.environ.get("NIMBUS_IO_SERVICE_DOMAIN", 'nimbus.io')
 _host_port = int(os.environ.get("NIMBUS_IO_SERVICE_PORT", "443"))
 _default_collection_prefix = "dd"
 _reserved_collection_prefix = "rr"
@@ -38,8 +39,7 @@ def compute_default_hostname():
     """
     return the DNS hostname for the default collection
     """
-    hostname = ".".join(["nimbus", "io"])
-    hostname_with_port = ":".join([hostname, "%s" % _host_port])
+    hostname_with_port = ":".join([_service_domain, "%s" % _host_port])
     return hostname_with_port
 
 def compute_reserved_hostname(username, collection_name):
