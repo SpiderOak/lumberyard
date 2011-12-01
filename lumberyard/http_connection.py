@@ -63,7 +63,6 @@ class HTTPConnection(httplib.HTTPConnection):
         self._auth_key = auth_key
         self._auth_id = auth_id
         self.set_debuglevel(debug_level)
-        print "DEBUG: Conneting to %s" % ( base_address, )
         self.connect()
 
     def request(self, method, uri, body=None, headers=dict()):
