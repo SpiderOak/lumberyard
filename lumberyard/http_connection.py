@@ -6,6 +6,7 @@ nimbus.io wrapper for httplib.HTTPConnection
 """
 import httplib
 import logging
+import urllib
 
 from lumberyard.http_util import current_timestamp, \
     compute_authentication_string
@@ -89,7 +90,7 @@ class HTTPConnection(httplib.HTTPConnection):
             self._user_name, 
             method, 
             timestamp,
-            uri
+            urllib.unquote_plus(uri)
         )
 
         headers.update({

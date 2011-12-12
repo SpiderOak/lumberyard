@@ -2,3 +2,5 @@
 *.log
 build/*
 docs/_build/*
+MANIFEST
+dist/*
