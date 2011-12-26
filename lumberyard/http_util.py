@@ -98,8 +98,11 @@ def compute_uri(sub_dir, key=None, **kwargs):
     if key is not None:
         path = os.sep.join([path, key, ])
 
-    if len(kwargs) > 0:
-        path = "?".join([path, urllib.urlencode(kwargs.items()), ])
+    # filter out params set to None
+    params = [(k, v) for k, v in kwargs.items() if v is not None]
+
+    if len(params) > 0:
+        path = "?".join([path, urllib.urlencode(params), ])
 
     return path
 
