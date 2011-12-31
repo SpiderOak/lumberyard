@@ -2,10 +2,11 @@
 """
 HTTPConnection.py
 
-nimbus.io wrapper for httplib.HTTPConnection
+nimbus.io wrapper for httplib.HTTPSConnection
 """
 import httplib
 import logging
+import os
 import urllib
 
 from lumberyard.http_util import current_timestamp, \
@@ -31,13 +32,18 @@ class LumberyardRetryableHTTPError(LumberyardHTTPError):
         LumberyardHTTPError.__init__(self, 503, "Service unavailable")
         self.retry_after = retry_after
 
+# For testing on a local machines, we will not use SSL
+if os.environ.get("NIMBUS_IO_SERVICE_SSL", "1") == "0":
+    _base_class = httplib.HTTPConnection
+else:
+    _base_class = httplib.HTTPSConnection
 
-class HTTPConnection(httplib.HTTPConnection):
+class HTTPConnection(_base_class):
     """
     base_address
-        An hostname or address that should resolve to a socket connection on a 
+        A hostname or address that should resolve to a socket connection on a 
         server.
-
+MBUS_IO_SERVICE_SSL
         For example ``nimbus.io`` or ``127.0.0.1:8088``
 
     user_name
@@ -52,13 +58,13 @@ class HTTPConnection(httplib.HTTPConnection):
     debug level
         debug level of HTTPConnection base class 
 
-    nimbus.io wrapper for httplib.HTTPConnection. This constructor performs
+    nimbus.io wrapper for httplib.HTTPSConnection. This constructor performs
     the initial connection but does not send a request.
     """
     def __init__(
         self, base_address, user_name, auth_key, auth_id, debug_level=0
     ):
-        httplib.HTTPConnection.__init__(self, base_address)
+        _base_class.__init__(self, base_address)
         self._log = logging.getLogger("HTTPConnection")
         self._user_name = user_name
         self._auth_key = auth_key
@@ -99,9 +105,7 @@ class HTTPConnection(httplib.HTTPConnection):
             "agent"                 : 'lumberyard/1.0'
         })
 
-        httplib.HTTPConnection.request(
-            self, method, uri, body=body, headers=headers
-        )
+        _base_class.request(self, method, uri, body=body, headers=headers)
 
         response = self.getresponse()
         if response.status != httplib.OK:
