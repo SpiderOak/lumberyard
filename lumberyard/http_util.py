@@ -102,7 +102,10 @@ def compute_uri(sub_dir, key=None, **kwargs):
     params = [(k, v) for k, v in kwargs.items() if v is not None]
 
     if len(params) > 0:
-        path = "?".join([path, urllib.urlencode(params), ])
+        if "?" in path:
+            path = "&".join([path, urllib.urlencode(params), ])
+        else:
+            path = "?".join([path, urllib.urlencode(params), ])
 
     return path
 
