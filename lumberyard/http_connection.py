@@ -32,6 +32,9 @@ class LumberyardRetryableHTTPError(LumberyardHTTPError):
         LumberyardHTTPError.__init__(self, 503, "Service unavailable")
         self.retry_after = retry_after
 
+_timeout_str = os.environ.get("NIMBUSIO_CONNECTION_TIMEOUT")
+_timeout = (None if _timeout_str is None else float(_timeout_str))
+
 # For testing on a local machines, we will not use SSL
 if os.environ.get("NIMBUS_IO_SERVICE_SSL", "1") == "0":
     _base_class = httplib.HTTPConnection
@@ -43,7 +46,7 @@ class HTTPConnection(_base_class):
     base_address
         A hostname or address that should resolve to a socket connection on a 
         server.
-MBUS_IO_SERVICE_SSL
+
         For example ``nimbus.io`` or ``127.0.0.1:8088``
 
     user_name
@@ -62,9 +65,14 @@ MBUS_IO_SERVICE_SSL
     the initial connection but does not send a request.
     """
     def __init__(
-        self, base_address, user_name, auth_key, auth_id, debug_level=0
+        self, 
+        base_address, 
+        user_name, 
+        auth_key, 
+        auth_id, 
+        debug_level=0
     ):
-        _base_class.__init__(self, base_address)
+        _base_class.__init__(self, base_address, timeout=_timeout)
         self._log = logging.getLogger("HTTPConnection")
         self._user_name = user_name
         self._auth_key = auth_key
@@ -107,13 +115,19 @@ MBUS_IO_SERVICE_SSL
 
         _base_class.request(self, method, uri, body=body, headers=headers)
 
-        response = self.getresponse()
+        try:
+            response = self.getresponse()
+        except httplib.BadStatusLine, instance:
+            self._log.exception("BadStatusLine: '{0}'".format(instance))
+            self.close()
+            raise LumberyardHTTPError(500, "BadStatusLine")
+
         if response.status != httplib.OK:
             self._log.error("request failed %s %s" % (
                 response.status, response.reason, 
             )) 
+            response.read()
             self.close()
-            self.connect()
 
             # if we got 503 service unavailable
             # and there is a retry_after header with an integer value 
