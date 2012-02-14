@@ -113,7 +113,14 @@ class HTTPConnection(_base_class):
             "agent"                 : 'lumberyard/1.0'
         })
 
-        _base_class.request(self, method, uri, body=body, headers=headers)
+        try:
+            _base_class.request(self, method, uri, body=body, headers=headers)
+        except Exception, instance:
+            # 2012-02-14 dougfort -- we are getting timeouts here
+            # on heavily loaded benchmark tests
+            self._log.exception(str(instance))
+            self.close()
+            raise LumberyardHTTPError(500, str(instance))
 
         try:
             response = self.getresponse()
