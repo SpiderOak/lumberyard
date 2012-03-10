@@ -26,7 +26,7 @@ class LumberyardHTTPError(Exception):
 class LumberyardRetryableHTTPError(LumberyardHTTPError):
     """
     a status of 503 Service unavailable was returned by the HTTP server
-    but the request can b retried after an interval
+    but the request can be retried after an interval
     """
     def __init__(self, retry_after):
         LumberyardHTTPError.__init__(self, 503, "Service unavailable")
@@ -112,6 +112,10 @@ class HTTPConnection(_base_class):
             "x-nimbus-io-timestamp" : str(timestamp),
             "agent"                 : 'lumberyard/1.0'
         })
+
+        # the body maybe beyond 7 bit ascii, so a unicode URL can't be combined
+        # with it into a single string to form the request.
+        uri = bytes(uri)
 
         try:
             _base_class.request(self, method, uri, body=body, headers=headers)
