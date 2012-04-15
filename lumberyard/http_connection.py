@@ -80,7 +80,12 @@ class HTTPConnection(_base_class):
         self.set_debuglevel(debug_level)
         self.connect()
 
-    def request(self, method, uri, body=None, headers=dict()):
+    def request(self, 
+                method, 
+                uri, 
+                body=None, 
+                headers=dict(), 
+                expected_status=httplib.OK):
         """
         method
             one of GET, POST, DELETE, HEAD
@@ -93,6 +98,9 @@ class HTTPConnection(_base_class):
 
         headers
             a dictionary of key/value pairs to be added to the HTTP headers
+
+        expected_status
+            status indicating a successful result, for example 201 CREATED
 
         send an HTTP request over the connection
         return a HTTPResponse object, or raise an exception
@@ -129,7 +137,7 @@ class HTTPConnection(_base_class):
             self.close()
             raise LumberyardHTTPError(500, "BadStatusLine")
 
-        if response.status != httplib.OK:
+        if response.status != expected_status:
             self._log.error("request failed %s %s" % (
                 response.status, response.reason, 
             )) 

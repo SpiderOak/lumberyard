@@ -8,7 +8,7 @@ from distutils.core import setup
 
 _name = "lumberyard"
 _description = "HTTP access to $NAME"
-_version = "0.1.0"
+_version = "0.2.0"
 _author = "Doug Fort"
 _author_email = "dougfort@spideroak.com"
 _url = "https://spideroak.com"
