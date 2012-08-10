@@ -84,7 +84,7 @@ class HTTPConnection(_base_class):
                 method, 
                 uri, 
                 body=None, 
-                headers=dict(), 
+                headers=None, 
                 expected_status=httplib.OK):
         """
         method
@@ -105,6 +105,9 @@ class HTTPConnection(_base_class):
         send an HTTP request over the connection
         return a HTTPResponse object, or raise an exception
         """
+        if headers is None:
+            headers = dict()
+
         timestamp = current_timestamp()
         authentication_string = compute_authentication_string(
             self._auth_id,
@@ -145,7 +148,6 @@ class HTTPConnection(_base_class):
             self._log.error("request failed %s %s" % (
                 response.status, response.reason, 
             )) 
-            response.read()
             self.close()
 
             # if we got 503 service unavailable
