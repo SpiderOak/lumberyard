@@ -8,6 +8,7 @@ import httplib
 import logging
 import os
 import urllib
+import socket
 
 from lumberyard.http_util import current_timestamp, \
     compute_authentication_string
@@ -148,6 +149,14 @@ class HTTPConnection(_base_class):
             self._log.error("request failed %s %s" % (
                 response.status, response.reason, 
             )) 
+
+            # the server may have closed the connection already if this is an
+            # error response
+            try:
+                response.read()
+            except socket.error:
+                pass
+
             self.close()
 
             # if we got 503 service unavailable
