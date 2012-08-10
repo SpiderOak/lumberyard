@@ -125,6 +125,17 @@ class HTTPConnection(_base_class):
             "agent"                 : 'lumberyard/1.0'
         })
 
+        # nginx will (rightly) reject with HTTP status 411 Length Required if
+        # we send a PUT without a Content-Length header, even if the body size
+        # is 0.  and our httplib base class won't add this header if body is
+        # None.
+        if method == "PUT":
+            try:
+                headers.setdefault("Content-Length", bytes(len(body)))
+            except TypeError:
+                if body is None:
+                    headers.setdefault("Content-Length", bytes(0))
+
         # the body maybe beyond 7 bit ascii, so a unicode URL can't be combined
         # with it into a single string to form the request.
         uri = bytes(uri)
