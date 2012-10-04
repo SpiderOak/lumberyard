@@ -30,11 +30,14 @@ class LumberyardRetryableHTTPError(LumberyardHTTPError):
     but the request can be retried after an interval
     """
     def __init__(self, retry_after):
-        LumberyardHTTPError.__init__(self, 503, "Service unavailable")
+        LumberyardHTTPError.__init__(self, 
+                                     httplib.SERVICE_UNAVAILABLE, 
+                                     "Service unavailable")
         self.retry_after = retry_after
 
 _timeout_str = os.environ.get("NIMBUSIO_CONNECTION_TIMEOUT")
 _timeout = (None if _timeout_str is None else float(_timeout_str))
+_connection_retry_seconds = 10
 
 # For testing on a local machines, we will not use SSL
 if os.environ.get("NIMBUS_IO_SERVICE_SSL", "1") == "0":
@@ -79,7 +82,13 @@ class HTTPConnection(_base_class):
         self._auth_key = auth_key
         self._auth_id = auth_id
         self.set_debuglevel(debug_level)
-        self.connect()
+        self._connected = False
+
+    def close(self):
+        self._log.debug("close()")
+        if self._connected:
+            _base_class.close(self)
+            self._connected = False
 
     def request(self, 
                 method, 
@@ -89,7 +98,7 @@ class HTTPConnection(_base_class):
                 expected_status=httplib.OK):
         """
         method
-            one of GET, POST, DELETE, HEAD
+            one of GET, PUT, POST, DELETE, HEAD
 
         uri
             the REST command for this request
@@ -106,6 +115,22 @@ class HTTPConnection(_base_class):
         send an HTTP request over the connection
         return a HTTPResponse object, or raise an exception
         """
+        if not self._connected:
+            try:
+                self.connect()
+            except Exception, instance:
+                # this could be an error from a real socket or a gevent 
+                # monkeypatched socket. So we check the string
+                if "DNSError".lower() in str(instance).lower():
+                    self._log("DNSError retry in {0} seconds".format(
+                        _connection_retry_seconds))
+                    raise LumberyardRetryableHTTPError(
+                        _connection_retry_seconds)
+                self._log.exception("Unhandled connection error {0}".format(
+                    str(instance)))
+                raise
+            self._connected = True
+
         if headers is None:
             headers = dict()
 
@@ -147,14 +172,16 @@ class HTTPConnection(_base_class):
             # on heavily loaded benchmark tests
             self._log.exception(str(instance))
             self.close()
-            raise LumberyardHTTPError(500, str(instance))
+            raise LumberyardHTTPError(httplib.INTERNAL_SERVER_ERROR, 
+                                      str(instance))
 
         try:
             response = self.getresponse()
         except httplib.BadStatusLine, instance:
             self._log.exception("BadStatusLine: '{0}'".format(instance))
             self.close()
-            raise LumberyardHTTPError(500, "BadStatusLine")
+            raise LumberyardHTTPError(httplib.INTERNAL_SERVER_ERROR, 
+                                      "BadStatusLine")
 
         if response.status != expected_status:
             self._log.error("request failed %s %s" % (
@@ -173,7 +200,7 @@ class HTTPConnection(_base_class):
             # if we got 503 service unavailable
             # and there is a retry_after header with an integer value 
             # give the caller a chance to retry
-            if response.status == 503:
+            if response.status == httplib.SERVICE_UNAVAILABLE:
                 retry_after = response.getheader("RETRY-AFTER", None)
                 if retry_after is not None:
                     seconds = None
@@ -266,14 +293,16 @@ class UnAuthHTTPConnection(_base_class):
             # on heavily loaded benchmark tests
             self._log.exception(str(instance))
             self.close()
-            raise LumberyardHTTPError(500, str(instance))
+            raise LumberyardHTTPError(httplib.INTERNAL_SERVER_ERROR, 
+                                      str(instance))
 
         try:
             response = self.getresponse()
         except httplib.BadStatusLine, instance:
             self._log.exception("BadStatusLine: '{0}'".format(instance))
             self.close()
-            raise LumberyardHTTPError(500, "BadStatusLine")
+            raise LumberyardHTTPError(httplib.INTERNAL_SERVER_ERROR, 
+                                      "BadStatusLine")
 
         if response.status != expected_status:
             self._log.error("request failed %s %s" % (
@@ -292,7 +321,7 @@ class UnAuthHTTPConnection(_base_class):
             # if we got 503 service unavailable
             # and there is a retry_after header with an integer value 
             # give the caller a chance to retry
-            if response.status == 503:
+            if response.status == httplib.SERVICE_UNAVAILABLE:
                 retry_after = response.getheader("RETRY-AFTER", None)
                 if retry_after is not None:
                     seconds = None
