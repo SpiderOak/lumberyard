@@ -37,7 +37,8 @@ class LumberyardRetryableHTTPError(LumberyardHTTPError):
 
 _timeout_str = os.environ.get("NIMBUSIO_CONNECTION_TIMEOUT")
 _timeout = (None if _timeout_str is None else float(_timeout_str))
-_connection_retry_seconds = 10
+_connection_retries = int(os.environ.get("NIMUSIO_CONNECTION_RETRIES", "5"))
+_connection_retry_seconds = 15
 
 # For testing on a local machines, we will not use SSL
 if os.environ.get("NIMBUS_IO_SERVICE_SSL", "1") == "0":
@@ -115,17 +116,22 @@ class HTTPConnection(_base_class):
         send an HTTP request over the connection
         return a HTTPResponse object, or raise an exception
         """
-        if not self._connected:
+        retry_count = 0
+        while not self._connected:
             try:
                 self.connect()
             except Exception, instance:
                 # this could be an error from a real socket or a gevent 
                 # monkeypatched socket. So we check the string
                 if "DNSError".lower() in str(instance).lower():
-                    self._log("DNSError retry in {0} seconds".format(
-                        _connection_retry_seconds))
-                    raise LumberyardRetryableHTTPError(
-                        _connection_retry_seconds)
+                    retry_count += 1
+                    if retry_count > _connection_retries:
+                        self._log("DNSError: too many retries".format(
+                            retry_count))
+                        raise
+                    self._log("DNSError retry {0} in {1} seconds".format(
+                        retry_count, _connection_retry_seconds))
+                    continue                       
                 self._log.exception("Unhandled connection error {0}".format(
                     str(instance)))
                 raise
