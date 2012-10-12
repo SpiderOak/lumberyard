@@ -178,8 +178,10 @@ class HTTPConnection(_base_class):
             # on heavily loaded benchmark tests
             self._log.exception(str(instance))
             self.close()
-            raise LumberyardHTTPError(httplib.INTERNAL_SERVER_ERROR, 
-                                      str(instance))
+            # 2012-10-12 dougfort -- if we get an exception here, it's not
+            # an internal server error. So pass it on and let the caller deal
+            # with it
+            raise
 
         try:
             response = self.getresponse()
