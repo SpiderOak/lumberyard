@@ -17,26 +17,47 @@ from commands import \
     ncl_create_collection, \
     ncl_set_collection, \
     ncl_delete_collection, \
-    ncl_list_files, \
-    ncl_list_file_versions, \
-    ncl_list_file, \
-    ncl_archive_file, \
-    ncl_retrieve_file, \
-    ncl_delete_file
+    ncl_list_keys, \
+    ncl_list_key_versions, \
+    ncl_list_key, \
+    ncl_archive_key, \
+    ncl_retrieve_key, \
+    ncl_delete_key
 
 _test_cases = [
-    ("*** invalid string ***", "exception"),
-    ("list collections", {"command" : ncl_list_collections}),
-    ("list collection 111111111111111-", "exception"),
-    ("list collection aaa", {"command" : ncl_list_collection,
+    (u"*** invalid string ***", "exception"),
+    (u"list collections", {"command" : ncl_list_collections}),
+    (u"list collection 111111111111111-", "exception"),
+    (u"list collection aaa", {"command" : ncl_list_collection,
                              "collection_name" : "aaa"}),
-    ("create collection 1111--11111111111", "exception"),
-    ("create collection aaa", {"command" : ncl_create_collection,
+    (u"create collection 1111--11111111111", "exception"),
+    (u"create collection aaa", {"command" : ncl_create_collection,
                              "collection_name" : "aaa"}),
-    ("create collection aaa versioning=true", 
+    (u"create collection aaa versioning=true", 
         {"command" : ncl_create_collection,
          "collection_name" : "aaa",
          "versioning" : True}),
+    (u"create collection aaa versioning=true access_control=aaa/bbb", 
+        {"command" : ncl_create_collection,
+         "collection_name" : "aaa",
+         "versioning" : True,
+         "access_control" : "aaa/bbb"}),
+    (u"set collection aaa versioning=true", 
+        {"command" : ncl_set_collection,
+         "collection_name" : "aaa",
+         "versioning" : True}),
+    (u"set collection aaa versioning=true access_control=aaa/bbb", 
+        {"command" : ncl_set_collection,
+         "collection_name" : "aaa",
+         "versioning" : True,
+         "access_control" : "aaa/bbb"}),
+    (u"delete collection aaa", {"command" : ncl_delete_collection,
+                                "collection_name" : "aaa"}),
+    (u"xxx list keys", {"command" : ncl_list_keys,
+                        "collection_name" : "xxx"}),
+    (u"xxx list key versions aaa", {"command" : ncl_list_key_versions,
+                                    "collection_name" : "xxx",
+                                    "key" : "aaa"}),
 ]
 
 class TestBucket(unittest.TestCase):

@@ -4,9 +4,9 @@ create collection <collection-name> [versioning=true|false] [access-control=<acc
 set collection <collection-name> versioning=true|false
 set collection <collection-name> access-control=<access-control-path>
 delete collection <collection-name>
-<collection-name> list files [<directory-path>] [pattern=<glob-expression>] [recursive=true|false] [versions=true|false]
-<collection-name> list file versions <file-path>
-<collection-name> list file <file-path>
-<collection-name> archive file <file-path> [source=<source-path1>[,<source-path2>[,...]]]
-<collection-name> retrieve file <file-path> [slice=<slice-criteria>] [version=<version-identifier>] [destination=<destination-path>]
-<collection-name> delete file <file-path> [version=<version-identifier>]
+<collection-name> list keys [<directory-path>] [pattern=<glob-expression>] [recursive=true|false] [versions=true|false]
+<collection-name> list key versions <file-path>
+<collection-name> list key <file-path>
+<collection-name> archive key <file-path> [source=<source-path1>[,<source-path2>[,...]]]
+<collection-name> retrieve key <file-path> [slice=<slice-criteria>] [version=<version-identifier>] [destination=<destination-path>]
+<collection-name> delete key <file-path> [version=<version-identifier>]
