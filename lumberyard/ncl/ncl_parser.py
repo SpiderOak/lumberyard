@@ -37,15 +37,15 @@ _command_templates = [
     (ncl_list_keys, 
      re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist keys\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_list_key_versions, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist key versions\s(?P<key>\w+)\s*(?P<options>).*$", re.UNICODE), ),
+     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist key versions\s(?P<key>\w+)\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_list_key, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist key\s(P?<path>.*)$", re.UNICODE), ),
+     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist key\s(?P<key>\w+)\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_archive_key, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sarchive key\s*(?P<options>.*)$", re.UNICODE), ),
+     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sarchive key\s(?P<key>\w+)\s*(?P<paths>.*)$", re.UNICODE), ),
     (ncl_retrieve_key, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sretrieve key\s*(?P<options>.*)$", re.UNICODE), ),
+     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sretrieve key\s(?P<key>\w+)\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_delete_key, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sdelete key\s*(P<options>.*)$", re.UNICODE), ), ]
+     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sdelete key\s(?P<key>\w+)\s*(?P<options>.*)$", re.UNICODE), ), ]
 
 _collection_name_re = re.compile(r'[a-z0-9][a-z0-9-]*[a-z0-9]$')
 _max_collection_name_size = 63
@@ -59,6 +59,15 @@ def _valid_collection_name(collection_name):
         and not '--' in collection_name \
         and _collection_name_re.match(collection_name) is not None
 
+def _parse_options(option_string):
+    option_dict = dict()
+    for item in option_string.split():
+        option_pair = item.split(u"=")
+        if len(option_pair) != 2:
+            raise InvalidNCLString("Unparseable option {0}".format(item))
+        option_dict[option_pair[0].lower()] = option_pair[1]
+    return option_dict
+
 def _build_list_collections(match_object, ncl_dict):
     pass
 
@@ -69,17 +78,16 @@ def _build_list_collection(match_object, ncl_dict):
             ncl_dict["collection_name"]))
 
 def _collection_options(option_string, ncl_dict):
-    for item in option_string.split():
-        option_pair = item.split(u"=")
-        if len(option_pair) != 2:
-            raise InvalidNCLString("Unparseable option {0}".format(item))
-        if option_pair[0].lower() == u"versioning":
-            if option_pair[1].lower() == u"true":
-                ncl_dict["versioning"] = True
-            elif option_pair[1].lower() != u"false":
-                raise InvalidNCLString("Unknown versioning {0}".format(item))
-        elif option_pair[0].lower() == u"access_control":
-            ncl_dict["access_control"] = option_pair[1]
+    option_dict = _parse_options(option_string)
+
+    if u"versioning" in option_dict:
+        if option_dict["versioning"].lower() == u"true":
+            ncl_dict["versioning"] = True
+        elif option_dict != u"false":
+            raise InvalidNCLString("Unknown versioning {0}".format(item))
+
+    if u"access_control" in option_dict:
+        ncl_dict["access_control"] = option_dict["access_control"]
 
 def _build_create_collection(match_object, ncl_dict):
     ncl_dict["collection_name"] = match_object.group("collection_name")
@@ -124,6 +132,10 @@ def _build_list_key(match_object, ncl_dict):
             ncl_dict["collection_name"]))
 
     ncl_dict["key"] = match_object.group("key")
+    
+    option_dict = _parse_options(match_object.group("options"))
+    if "version" in option_dict:
+        ncl_dict["version"] = option_dict["version"]
 
 def _build_archive_key(match_object, ncl_dict):
     ncl_dict["collection_name"] = match_object.group("collection_name")
@@ -132,6 +144,9 @@ def _build_archive_key(match_object, ncl_dict):
             ncl_dict["collection_name"]))
 
     ncl_dict["key"] = match_object.group("key")
+    paths = match_object.group("paths").split()
+    if len(paths) > 0:
+        ncl_dict["paths"] = paths
 
 def _build_retrieve_key(match_object, ncl_dict):
     ncl_dict["collection_name"] = match_object.group("collection_name")
@@ -140,6 +155,9 @@ def _build_retrieve_key(match_object, ncl_dict):
             ncl_dict["collection_name"]))
 
     ncl_dict["key"] = match_object.group("key")
+    option_dict = _parse_options(match_object.group("options"))
+    if "dest" in option_dict:
+        ncl_dict["dest"] = option_dict["dest"]
 
 def _build_delete_key(match_object, ncl_dict):
     ncl_dict["collection_name"] = match_object.group("collection_name")
