@@ -5,6 +5,7 @@ ncl_main.py
 main program for nimbusio command lnaguage
 """
 import argparse
+import json
 import logging
 import sys
 
@@ -12,8 +13,12 @@ from lumberyard.http_connection import HTTPConnection, \
         UnAuthHTTPConnection, \
         LumberyardHTTPError
 
-from identity import load_identity_from_environment, load_identity_from_file
+from lumberyard.http_util import compute_default_hostname, \
+        compute_collection_hostname, \
+        compute_default_collection_name, \
+        compute_uri
 
+from identity import load_identity_from_environment, load_identity_from_file
 from ncl_parser import parse_ncl_string, InvalidNCLString
 from commands import \
     ncl_list_collections, \
@@ -28,8 +33,14 @@ from commands import \
     ncl_retrieve_key, \
     ncl_delete_key
 
-class InvalidIdentity(Exception):
+class NCLError(Exception):
     pass
+class InvalidIdentity(NCLError):
+    pass
+class NCLNotImplemented(NCLError):
+    pass
+
+_max_keys = 1000
 
 _log_format = '%(asctime)s %(name)-12s: %(levelname)-8s %(message)s'
 def _initialize_logging():
@@ -70,38 +81,96 @@ def _load_identity(args):
 
     return load_identity_from_environment()
 
-def _list_collections(args, indentity, ncl_dict):
-    pass
+def _list_collections(args, identity, ncl_dict):
+    method = "GET"
 
-def _list_collection(args, indentity, ncl_dict):
-    pass
+    if identity is None:
+        raise InvalidIdentity("Must have identity to list collections")
 
-def _create_collection(args, indentity, ncl_dict):
-    pass
+    http_connection = HTTPConnection(compute_default_hostname(),
+                                     identity.user_name,
+                                     identity.auth_key,
+                                     identity.auth_key_id)
+    path = "/".join(["customers", identity.user_name, "collections"])
+    uri = compute_uri(path)
 
-def _set_collection(args, indentity, ncl_dict):
-    pass
+    response = http_connection.request(method, uri, body=None)
+        
+    data = response.read()
+    http_connection.close()
+    collection_list = json.loads(data)
+    # TODO: add an option for verbose list
+    for entry in collection_list:
+        print entry["name"]
 
-def _delete_collectio0n(args, indentity, ncl_dict):
-    pass
+def _list_collection(args, identity, ncl_dict):
+    raise NCLNotImplemented("_list_collection")
 
-def _list_keys(args, indentity, ncl_dict):
-    pass
+def _create_collection(args, identity, ncl_dict):
+    raise NCLNotImplemented("_create_collection")
 
-def _list_key_versions(args, indentity, ncl_dict):
-    pass
+def _set_collection(args, identity, ncl_dict):
+    raise NCLNotImplemented("_set_collection")
 
-def _list_key(args, indentity, ncl_dict):
-    pass
+def _delete_collectio0n(args, identity, ncl_dict):
+    raise NCLNotImplemented("_delete_collection")
 
-def _archive_key(args, indentity, ncl_dict):
-    pass
+def _list_keys(args, identity, ncl_dict):
+    method = "GET"
 
-def _retrieve_key(args, indentity, ncl_dict):
-    pass
+    hostname = compute_collection_hostname(ncl_dict["collection_name"])
+    if identity is None:
+        http_connection = UnAuthHTTPConnection(hostname)
+    else:
+        http_connection = HTTPConnection(hostname,
+                                         identity.user_name,
+                                         identity.auth_key,
+                                         identity.auth_key_id)
+
+    kwargs = {
+        "max_keys" : _max_keys,
+    }
+    if "prefix" in ncl_dict and ncl_dict["prefix"] != "" and \
+        ncl_dict["prefix"] is not None: 
+        kwargs["prefix"] = ncl_dict["prefix"]
+    if "marker" in ncl_dict and ncl_dict["marker"] != "" and \
+        ncl_dict["marker"] is not None: 
+        kwargs["marker"] = ncl_dict["marker"]
+    if "delimiter" in ncl_dict and ncl_dict["delimiter"] != "" and \
+        ncl_dict["delimiter"] is not None: 
+        kwargs["delimiter"] = ncl_dict["delimiter"]
+
+    uri = compute_uri("data/", **kwargs)
+
+    response = http_connection.request(method, uri)
+    
+    data = response.read()
+    http_connection.close()
+    data_dict = json.loads(data)
+
+    if "key_data" in data_dict:
+        for key_entry in data_dict["key_data"]:
+            print key_entry["key"], 
+    elif "prefixes" in data_dict:
+        for prefix in data_dict["prefixes"]:
+            print prefix
+    else:
+        raise ValueError("Unexpected return value %s" % (data_dict, ))
+
+def _list_key_versions(args, identity, ncl_dict):
+    raise NCLNotImplemented("_list_key_versions")
+
+def _list_key(args, identity, ncl_dict):
+    raise NCLNotImplemented("_list_key")
+
+def _archive_key(args, identity, ncl_dict):
+    raise NCLNotImplemented("_archive_key")
+
+def _retrieve_key(args, identity, ncl_dict):
+    raise NCLNotImplemented("_retrieve_key")
 
 def _delete_key(args, identity, ncl_dict):
-    pass
+    raise NCLNotImplemented("_delete_key")
 
 _dispatch_table = {
     ncl_list_collections    : _list_collections,
@@ -138,6 +207,12 @@ def main():
         except InvalidNCLString, instance:
             log.error(str(instance))
             return 1
+        except InvalidIdentity, instance:
+            log.error(str(instance))
+            return 1 
+        except LumberyardHTTPError, instance:
+            log.error(str(instance))
+            return 1 
         except Exception, instance:
             log.exception(line)
             return 1
