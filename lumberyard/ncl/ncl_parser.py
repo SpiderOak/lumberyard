@@ -37,15 +37,15 @@ _command_templates = [
     (ncl_list_keys, 
      re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist keys\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_list_key_versions, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist key versions\s(?P<key>\w+)\s*(?P<options>.*)$", re.UNICODE), ),
+     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist key versions\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_list_key, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist key\s(?P<key>\w+)\s*(?P<options>.*)$", re.UNICODE), ),
+     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist key\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_archive_key, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sarchive key\s(?P<key>\w+)\s*(?P<paths>.*)$", re.UNICODE), ),
+     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sarchive key\s(?P<key>\S+)\s*(?P<paths>.*)$", re.UNICODE), ),
     (ncl_retrieve_key, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sretrieve key\s(?P<key>\w+)\s*(?P<options>.*)$", re.UNICODE), ),
+     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sretrieve key\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_delete_key, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sdelete key\s(?P<key>\w+)\s*(?P<options>.*)$", re.UNICODE), ), ]
+     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sdelete key\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ), ]
 
 _collection_name_re = re.compile(r'[a-z0-9][a-z0-9-]*[a-z0-9]$')
 _max_collection_name_size = 63

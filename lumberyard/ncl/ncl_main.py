@@ -41,6 +41,7 @@ class NCLNotImplemented(NCLError):
     pass
 
 _max_keys = 1000
+_read_buffer_size = 64 * 1024
 
 _log_format = '%(asctime)s %(name)-12s: %(levelname)-8s %(message)s'
 def _initialize_logging():
@@ -167,7 +168,33 @@ def _archive_key(args, identity, ncl_dict):
     raise NCLNotImplemented("_archive_key")
 
 def _retrieve_key(args, identity, ncl_dict):
-    raise NCLNotImplemented("_retrieve_key")
+    method = "GET"
+
+    hostname = compute_collection_hostname(ncl_dict["collection_name"])
+    if identity is None:
+        http_connection = UnAuthHTTPConnection(hostname)
+    else:
+        http_connection = HTTPConnection(hostname,
+                                         identity.user_name,
+                                         identity.auth_key,
+                                         identity.auth_key_id)
+
+    kwargs = {
+    }
+
+    uri = compute_uri("data", ncl_dict["key"], **kwargs)
+
+    response = http_connection.request(method, 
+                                       uri, 
+                                       body=None)
+
+    while True:
+        data = response.read(_read_buffer_size)
+        if len(data) == 0:
+            break
+        sys.stdout.write(data)
+
+    http_connection.close()
 
 def _delete_key(args, identity, ncl_dict):
     raise NCLNotImplemented("_delete_key")
