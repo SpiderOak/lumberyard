@@ -7,6 +7,7 @@ main program for nimbusio command lnaguage
 import argparse
 import json
 import logging
+from StringIO import StringIO
 import sys
 
 from lumberyard.http_connection import HTTPConnection, \
@@ -62,6 +63,8 @@ def _parse_commandline():
     parser = argparse.ArgumentParser(description="Nimbus.io Command Language")
     parser.add_argument("-i", "--identity-file", type=str, default=None,
                         help="path to a nimbusio identity file")
+    parser.add_argument("residue", type=str, nargs="+", 
+                        help="a ncl comman on the commandline")
 
     return parser.parse_args()
 
@@ -227,7 +230,12 @@ def main():
         log.error("invalid identity: {0}".format(instance))
         return 1
 
-    for line in sys.stdin:
+    if len(args.residue) > 0:
+        input_file = StringIO(" ".join(args.residue))
+    else:
+        input_file = sys.stdin
+
+    for line in input_file:
         try:
             ncl_dict = parse_ncl_string(line)
             _dispatch_table[ncl_dict["command"]](args, identity, ncl_dict)
