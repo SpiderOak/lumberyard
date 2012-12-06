@@ -17,7 +17,8 @@ from commands import \
     ncl_list_key, \
     ncl_archive_key, \
     ncl_retrieve_key, \
-    ncl_delete_key
+    ncl_delete_key, \
+    ncl_space_usage
 
 class InvalidNCLString(Exception):
     pass
@@ -45,7 +46,9 @@ _command_templates = [
     (ncl_retrieve_key, 
      re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sretrieve key\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_delete_key, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sdelete key\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ), ]
+     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sdelete key\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ),
+    (ncl_space_usage, 
+     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sspace usage\s*(?P<options>.*)$", re.UNICODE), ), ]
 
 _collection_name_re = re.compile(r'[a-z0-9][a-z0-9-]*[a-z0-9]$')
 _max_collection_name_size = 63
@@ -68,7 +71,7 @@ def _parse_options(option_string):
         option_dict[option_pair[0].lower()] = option_pair[1]
     return option_dict
 
-def _build_list_collections(match_object, ncl_dict):
+def _build_list_collections(_match_object, _ncl_dict):
     pass
 
 def _build_list_collection(match_object, ncl_dict):
@@ -84,7 +87,7 @@ def _collection_options(option_string, ncl_dict):
         if option_dict["versioning"].lower() == u"true":
             ncl_dict["versioning"] = True
         elif option_dict != u"false":
-            raise InvalidNCLString("Unknown versioning {0}".format(item))
+            raise InvalidNCLString("Unknown versioning {0}".format(ncl_dict))
 
     if u"access_control" in option_dict:
         ncl_dict["access_control"] = option_dict["access_control"]
@@ -167,6 +170,16 @@ def _build_delete_key(match_object, ncl_dict):
 
     ncl_dict["key"] = match_object.group("key")
 
+def _build_space_usage(match_object, ncl_dict):
+    ncl_dict["collection_name"] = match_object.group("collection_name")
+    if not _valid_collection_name(ncl_dict["collection_name"]):
+        raise InvalidNCLString("Invalid collection name {0}".format(
+            ncl_dict["collection_name"]))
+
+    option_dict = _parse_options(match_object.group("options"))
+    if "days" in option_dict:
+        ncl_dict["days"] = int(option_dict["days"])
+
 _dispatch_table = {
     ncl_list_collections   : _build_list_collections,
     ncl_list_collection    : _build_list_collection,
@@ -179,6 +192,7 @@ _dispatch_table = {
     ncl_archive_key        : _build_archive_key,
     ncl_retrieve_key       : _build_retrieve_key,
     ncl_delete_key         : _build_delete_key,
+    ncl_space_usage        : _build_space_usage,
 }
 
 def parse_ncl_string(ncl_string):
@@ -188,7 +202,6 @@ def parse_ncl_string(ncl_string):
     """
     ncl_dict = {}
     ncl_string.decode("utf-8")
-    tokens = ncl_string.split()
 
     # first identify the command
     ncl_dict["command"] = None

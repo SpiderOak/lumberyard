@@ -19,7 +19,8 @@ from lumberyard.http_util import compute_default_hostname, \
         compute_default_collection_name, \
         compute_uri
 
-from identity import load_identity_from_environment, load_identity_from_file
+from identity import load_identity_from_environment, \
+    load_identity_from_file
 from ncl_parser import parse_ncl_string, InvalidNCLString
 from commands import \
     ncl_list_collections, \
@@ -32,7 +33,8 @@ from commands import \
     ncl_list_key, \
     ncl_archive_key, \
     ncl_retrieve_key, \
-    ncl_delete_key
+    ncl_delete_key, \
+    ncl_space_usage
 
 class NCLError(Exception):
     pass
@@ -202,6 +204,35 @@ def _retrieve_key(args, identity, ncl_dict):
 def _delete_key(args, identity, ncl_dict):
     raise NCLNotImplemented("_delete_key")
 
+def _space_usage(args, identity, ncl_dict):
+    method = "GET"
+
+
+    if identity is None:
+        raise InvalidIdentity("Must have identity to retrieve space usage")
+
+    http_connection = HTTPConnection(compute_default_hostname(),
+                                     identity.user_name,
+                                     identity.auth_key,
+                                     identity.auth_key_id)
+
+    kwargs = {"action" : "space_usage"}
+    if "days" in ncl_dict:
+        kwargs["days_of_history"] = ncl_dict["days"]
+
+    path = "/".join(["customers", 
+                     identity.user_name, 
+                     "collections",
+                     ncl_dict["collection_name"]])
+    uri = compute_uri(path, **kwargs)
+
+    response = http_connection.request(method, uri, body=None)
+        
+    data = response.read()
+    http_connection.close()
+    result = json.loads(data)
+    print str(result)
+
 _dispatch_table = {
     ncl_list_collections    : _list_collections,
     ncl_list_collection     : _list_collection,
@@ -213,7 +244,8 @@ _dispatch_table = {
     ncl_list_key            : _list_key,
     ncl_archive_key         : _archive_key,
     ncl_retrieve_key        : _retrieve_key,
-    ncl_delete_key          : _delete_key}
+    ncl_delete_key          : _delete_key,
+    ncl_space_usage         : _space_usage}
 
 def main():
     """

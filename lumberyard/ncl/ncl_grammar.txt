@@ -10,3 +10,4 @@ delete collection <collection-name>
 <collection-name> archive key <file-path> [source=<source-path1>[,<source-path2>[,...]]]
 <collection-name> retrieve key <file-path> [slice=<slice-criteria>] [version=<version-identifier>] [destination=<destination-path>]
 <collection-name> delete key <file-path> [version=<version-identifier>]
+<collection-name> space usage [days=N]
