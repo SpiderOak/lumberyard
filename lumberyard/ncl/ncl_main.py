@@ -110,7 +110,24 @@ def _list_collections(args, identity, ncl_dict):
         print entry["name"]
 
 def _list_collection(args, identity, ncl_dict):
-    raise NCLNotImplemented("_list_collection")
+    method = "GET"
+
+    http_connection = HTTPConnection(compute_default_hostname(),
+                                     identity.user_name,
+                                     identity.auth_key,
+                                     identity.auth_key_id)
+    path = "/".join(["customers", 
+                     identity.user_name, 
+                     "collections",
+                     ncl_dict["collection_name"]])
+    uri = compute_uri(path)
+
+    response = http_connection.request(method, uri, body=None)
+        
+    data = response.read()
+    http_connection.close()
+    result = json.loads(data)
+    print str(result)
 
 def _create_collection(args, identity, ncl_dict):
     raise NCLNotImplemented("_create_collection")

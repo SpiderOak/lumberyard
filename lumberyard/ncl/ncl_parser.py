@@ -48,7 +48,7 @@ _command_templates = [
     (ncl_delete_key, 
      re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sdelete key\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_space_usage, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sspace usage\s*(?P<options>.*)$", re.UNICODE), ), ]
+     re.compile(u"^space usage\s(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\s*(?P<options>.*)$", re.UNICODE), ), ]
 
 _collection_name_re = re.compile(r'[a-z0-9][a-z0-9-]*[a-z0-9]$')
 _max_collection_name_size = 63
