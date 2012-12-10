@@ -42,6 +42,8 @@ class InvalidIdentity(NCLError):
     pass
 class NCLNotImplemented(NCLError):
     pass
+class NCLErrorResult(NCLError):
+    pass
 
 _max_keys = 1000
 _read_buffer_size = 64 * 1024
@@ -224,7 +226,6 @@ def _delete_key(args, identity, ncl_dict):
 def _space_usage(args, identity, ncl_dict):
     method = "GET"
 
-
     if identity is None:
         raise InvalidIdentity("Must have identity to retrieve space usage")
 
@@ -248,7 +249,23 @@ def _space_usage(args, identity, ncl_dict):
     data = response.read()
     http_connection.close()
     result = json.loads(data)
-    print str(result)
+
+    if not result["success"]:
+        raise NCLErrorResult(result["error_message"])
+
+    print
+    for day_entry in result["operational_stats"]:
+        print day_entry["day"]
+        if day_entry["archive_success"] != 0:
+            print "{0:8} archive success".format(day_entry["archive_success"])
+            print "{0:8} archive bytes".format(day_entry["success_bytes_in"])
+        if day_entry["retrieve_success"] != 0:
+            print "{0:8} retrieve success".format(day_entry["retrieve_success"])
+            print "{0:8} retrieve bytes".format(day_entry["success_bytes_out"])
+        if day_entry["delete_success"] != 0:
+            print "{0:8} delete success".format(day_entry["delete_success"])
+        if day_entry["listmatch_success"] != 0:
+            print "{0:8} listmatch success".format(day_entry["listmatch_success"])
 
 _dispatch_table = {
     ncl_list_collections    : _list_collections,
@@ -289,6 +306,9 @@ def main():
             ncl_dict = parse_ncl_string(line)
             _dispatch_table[ncl_dict["command"]](args, identity, ncl_dict)
         except InvalidNCLString, instance:
+            log.error(str(instance))
+            return 1
+        except NCLErrorResult, instance:
             log.error(str(instance))
             return 1
         except InvalidIdentity, instance:
