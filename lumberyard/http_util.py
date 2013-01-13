@@ -8,7 +8,10 @@ import hashlib
 import hmac
 import os
 import time
-import urllib
+try:
+    from urllib import urlencode
+except ImportError:
+    from urllib.parse import urlencode
 
 meta_prefix = "__nimbus_io__"
 # TODO ssl
@@ -39,7 +42,7 @@ def compute_default_hostname():
     """
     return the DNS hostname for the default collection
     """
-    hostname_with_port = ":".join([_service_domain, "%s" % _host_port])
+    hostname_with_port = ":".join([_service_domain, str(_host_port)])
     return hostname_with_port
 
 def compute_reserved_hostname(username, collection_name):
@@ -77,11 +80,11 @@ def compute_authentication_string(
     """
     message = "\n".join([user_name, method, str(timestamp), uri])
     hmac_object = hmac.new(
-        auth_key,
-        message,
+        auth_key.encode("utf-8"),
+        message.encode("utf-8"),
         hashlib.sha256
     )
-    return "NIMBUS.IO %s:%s" % (auth_key_id, hmac_object.hexdigest(), )
+    return "NIMBUS.IO {0}:{1}".format(auth_key_id, hmac_object.hexdigest())
 
 def compute_uri(sub_dir, key=None, **kwargs):
     """
@@ -103,9 +106,9 @@ def compute_uri(sub_dir, key=None, **kwargs):
 
     if len(params) > 0:
         if "?" in path:
-            path = "&".join([path, urllib.urlencode(params), ])
+            path = "&".join([path, urlencode(params), ])
         else:
-            path = "?".join([path, urllib.urlencode(params), ])
+            path = "?".join([path, urlencode(params), ])
 
     return path
 

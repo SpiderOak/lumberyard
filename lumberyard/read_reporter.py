@@ -37,28 +37,28 @@ class ReadReporter(object):
         self._file_object.close()
 
     def fileno(self):
-        self._log.debug("fileno = %s"% (self._file_object.fileno(), ))
+        self._log.debug("fileno = {0}".format(self._file_object.fileno()))
         return self._file_object.fileno()
 
     def read(self, size=None):
-        self._log.debug("read(%r)" % (size, ))
+        self._log.debug("read({0})".format(size))
         data = None
         if size is None:
             data = self._file_object.read()
         else:
             data = self._file_object.read(size)
 
-        self._log.debug("actual bytes read %s" % (len(data), ))
+        self._log.debug("actual bytes read {0}".format(len(data)))
         self._callback(len(data))
 
         return data
 
     def seek(self, offset, whence=None):
-        self._log.debug("seek(%r, %r)" % (offset, whence, ))
+        self._log.debug("seek({0}, {1})".format(offset, whence))
         self._file_object.seek(offset, whence)
 
     def tell(self):
         result = self._file_object.tell()
-        self._log.debug("tell() = %s" % (result, ))
+        self._log.debug("tell() = {0}".format(result))
         return result
 

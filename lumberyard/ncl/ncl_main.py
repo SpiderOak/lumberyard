@@ -187,7 +187,7 @@ def _list_keys(args, identity, ncl_dict):
         for prefix in data_dict["prefixes"]:
             print(prefix)
     else:
-        raise ValueError("Unexpected return value %s" % (data_dict, ))
+        raise ValueError("Unexpected return value {0}".format(data_dict))
 
 def _list_key_versions(args, identity, ncl_dict):
     raise NCLNotImplemented("_list_key_versions")

@@ -20,7 +20,10 @@ except ImportError:
     from http.client import INTERNAL_SERVER_ERROR
 import logging
 import os
-import urllib
+try:
+    from urllib import unquote_plus
+except ImportError:
+    from urllib.parse import unquote_plus
 import socket
 import sys
 
@@ -162,7 +165,7 @@ class HTTPConnection(_base_class):
             self._user_name, 
             method, 
             timestamp,
-            urllib.unquote_plus(uri)
+            unquote_plus(uri)
         )
 
         headers.update({
@@ -177,17 +180,20 @@ class HTTPConnection(_base_class):
         # None.
         if method == "PUT":
             try:
-                headers.setdefault("Content-Length", bytes(len(body)))
+                headers.setdefault("Content-Length", str(len(body)))
             except TypeError:
                 if body is None:
-                    headers.setdefault("Content-Length", bytes(0))
+                    headers.setdefault("Content-Length", str(0))
 
         # the body maybe beyond 7 bit ascii, so a unicode URL can't be combined
         # with it into a single string to form the request.
-        uri = bytes(uri)
 
         try:
-            _base_class.request(self, method, uri, body=body, headers=headers)
+            _base_class.request(self, 
+                                method, 
+                                uri, 
+                                body=body, 
+                                headers=headers)
         except Exception:
             instance = sys.exc_info()[1]
             # 2012-02-14 dougfort -- we are getting timeouts here
@@ -301,17 +307,20 @@ class UnAuthHTTPConnection(_base_class):
         # None.
         if method == "PUT":
             try:
-                headers.setdefault("Content-Length", bytes(len(body)))
+                headers.setdefault("Content-Length", str(len(body)))
             except TypeError:
                 if body is None:
-                    headers.setdefault("Content-Length", bytes(0))
+                    headers.setdefault("Content-Length", str(0))
 
         # the body maybe beyond 7 bit ascii, so a unicode URL can't be combined
         # with it into a single string to form the request.
-        uri = bytes(uri)
 
         try:
-            _base_class.request(self, method, uri, body=body, headers=headers)
+            _base_class.request(self, 
+                                method, 
+                                uri, 
+                                body=body, 
+                                headers=headers)
         except Exception:
             instance = sys.exc_info()[1]
             # 2012-02-14 dougfort -- we are getting timeouts here
