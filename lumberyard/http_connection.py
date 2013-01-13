@@ -2,13 +2,27 @@
 """
 HTTPConnection.py
 
-nimbus.io wrapper for httplib.HTTPSConnection
+nimbus.io wrapper for HTTPSConnection
 """
-import httplib
+try:
+    from httplib import HTTPConnection
+    from httplib import HTTPSConnection
+    from httplib import BadStatusLine
+    from httplib import OK
+    from httplib import SERVICE_UNAVAILABLE
+    from httplib import INTERNAL_SERVER_ERROR
+except ImportError:
+    from http.client import HTTPConnection
+    from http.client import HTTPSConnection
+    from http.client import BadStatusLine
+    from http.client import OK
+    from http.client import SERVICE_UNAVAILABLE
+    from http.client import INTERNAL_SERVER_ERROR
 import logging
 import os
 import urllib
 import socket
+import sys
 
 from lumberyard.http_util import current_timestamp, \
     compute_authentication_string
@@ -22,7 +36,7 @@ class LumberyardHTTPError(Exception):
         self.reason = reason
         Exception.__init__(self, self.__str__())
     def __str__(self):
-        return "(%s) %s" % (self.status, self.reason, )
+        return "({0}) {1}".format(self.status, self.reason)
 
 class LumberyardRetryableHTTPError(LumberyardHTTPError):
     """
@@ -31,7 +45,7 @@ class LumberyardRetryableHTTPError(LumberyardHTTPError):
     """
     def __init__(self, retry_after):
         LumberyardHTTPError.__init__(self, 
-                                     httplib.SERVICE_UNAVAILABLE, 
+                                     SERVICE_UNAVAILABLE, 
                                      "Service unavailable")
         self.retry_after = retry_after
 
@@ -42,9 +56,9 @@ _connection_retry_seconds = 15
 
 # For testing on a local machines, we will not use SSL
 if os.environ.get("NIMBUS_IO_SERVICE_SSL", "1") == "0":
-    _base_class = httplib.HTTPConnection
+    _base_class = HTTPConnection
 else:
-    _base_class = httplib.HTTPSConnection
+    _base_class = HTTPSConnection
 
 class HTTPConnection(_base_class):
     """
@@ -66,7 +80,7 @@ class HTTPConnection(_base_class):
     debug level
         debug level of HTTPConnection base class 
 
-    nimbus.io wrapper for httplib.HTTPSConnection. This constructor performs
+    nimbus.io wrapper for HTTPSConnection. This constructor performs
     the initial connection but does not send a request.
     """
     def __init__(
@@ -96,7 +110,7 @@ class HTTPConnection(_base_class):
                 uri, 
                 body=None, 
                 headers=None, 
-                expected_status=httplib.OK):
+                expected_status=OK):
         """
         method
             one of GET, PUT, POST, DELETE, HEAD
@@ -120,7 +134,8 @@ class HTTPConnection(_base_class):
         while not self._connected:
             try:
                 self.connect()
-            except Exception, instance:
+            except Exception:
+                instance = sys.exc_info()[1]
                 # this could be an error from a real socket or a gevent 
                 # monkeypatched socket. So we check the string
                 if "DNSError".lower() in str(instance).lower():
@@ -173,7 +188,8 @@ class HTTPConnection(_base_class):
 
         try:
             _base_class.request(self, method, uri, body=body, headers=headers)
-        except Exception, instance:
+        except Exception:
+            instance = sys.exc_info()[1]
             # 2012-02-14 dougfort -- we are getting timeouts here
             # on heavily loaded benchmark tests
             self._log.exception(str(instance))
@@ -185,16 +201,16 @@ class HTTPConnection(_base_class):
 
         try:
             response = self.getresponse()
-        except httplib.BadStatusLine, instance:
+        except BadStatusLine:
+            instance = sys.exc_info()[1]
             self._log.exception("BadStatusLine: '{0}'".format(instance))
             self.close()
-            raise LumberyardHTTPError(httplib.INTERNAL_SERVER_ERROR, 
+            raise LumberyardHTTPError(INTERNAL_SERVER_ERROR, 
                                       "BadStatusLine")
 
         if response.status != expected_status:
-            self._log.error("request failed %s %s" % (
-                response.status, response.reason, 
-            )) 
+            self._log.error("request failed {0} {1}".format(response.status, 
+                                                            response.reason)) 
 
             # the server may have closed the connection already if this is an
             # error response
@@ -208,7 +224,7 @@ class HTTPConnection(_base_class):
             # if we got 503 service unavailable
             # and there is a retry_after header with an integer value 
             # give the caller a chance to retry
-            if response.status == httplib.SERVICE_UNAVAILABLE:
+            if response.status == SERVICE_UNAVAILABLE:
                 retry_after = response.getheader("RETRY-AFTER", None)
                 if retry_after is not None:
                     seconds = None
@@ -234,7 +250,7 @@ class UnAuthHTTPConnection(_base_class):
     debug level
         debug level of HTTPConnection base class 
 
-    nimbus.io wrapper for httplib.HTTPSConnection. This constructor performs
+    nimbus.io wrapper for HTTPSConnection. This constructor performs
     the initial connection but does not send a request.
     """
     def __init__(
@@ -252,7 +268,7 @@ class UnAuthHTTPConnection(_base_class):
                 uri, 
                 body=None, 
                 headers=None, 
-                expected_status=httplib.OK):
+                expected_status=OK):
         """
         method
             one of GET, POST, DELETE, HEAD
@@ -296,26 +312,27 @@ class UnAuthHTTPConnection(_base_class):
 
         try:
             _base_class.request(self, method, uri, body=body, headers=headers)
-        except Exception, instance:
+        except Exception:
+            instance = sys.exc_info()[1]
             # 2012-02-14 dougfort -- we are getting timeouts here
             # on heavily loaded benchmark tests
             self._log.exception(str(instance))
             self.close()
-            raise LumberyardHTTPError(httplib.INTERNAL_SERVER_ERROR, 
+            raise LumberyardHTTPError(INTERNAL_SERVER_ERROR, 
                                       str(instance))
 
         try:
             response = self.getresponse()
-        except httplib.BadStatusLine, instance:
+        except BadStatusLine:
+            instance = sys.exc_info()[1]
             self._log.exception("BadStatusLine: '{0}'".format(instance))
             self.close()
-            raise LumberyardHTTPError(httplib.INTERNAL_SERVER_ERROR, 
+            raise LumberyardHTTPError(INTERNAL_SERVER_ERROR, 
                                       "BadStatusLine")
 
         if response.status != expected_status:
-            self._log.error("request failed %s %s" % (
-                response.status, response.reason, 
-            )) 
+            self._log.error("request failed {0} {1}".format(response.status, 
+                                                            response.reason)) 
 
             # the server may have closed the connection already if this is an
             # error response
@@ -329,7 +346,7 @@ class UnAuthHTTPConnection(_base_class):
             # if we got 503 service unavailable
             # and there is a retry_after header with an integer value 
             # give the caller a chance to retry
-            if response.status == httplib.SERVICE_UNAVAILABLE:
+            if response.status == SERVICE_UNAVAILABLE:
                 retry_after = response.getheader("RETRY-AFTER", None)
                 if retry_after is not None:
                     seconds = None

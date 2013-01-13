@@ -5,6 +5,7 @@ parser.py
 parse strings of ncl into command structures
 """
 import re
+import sys
 
 from commands import \
     ncl_list_collections, \
@@ -26,29 +27,29 @@ class InvalidNCLString(Exception):
 # detect the basic command skeleton
 # TODO: we could allow abbreviations
 _command_templates = [
-    (ncl_list_collections, re.compile(u"^list collections$", re.UNICODE), ),
+    (ncl_list_collections, re.compile("^list collections$", re.UNICODE), ),
     (ncl_list_collection, 
-     re.compile(u"^list collection\s(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])$", re.UNICODE), ),
+     re.compile("^list collection\s(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])$", re.UNICODE), ),
     (ncl_create_collection,
-     re.compile(u"^create collection\s(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\s*(?P<options>.*)$", re.UNICODE), ),
+     re.compile("^create collection\s(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_set_collection,
-     re.compile(u"set collection\s(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\s*(?P<options>.*)$", re.UNICODE), ),
+     re.compile("set collection\s(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_delete_collection,
-     re.compile(u"delete collection\s(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])", re.UNICODE), ),
+     re.compile("delete collection\s(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])", re.UNICODE), ),
     (ncl_list_keys, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist keys\s*(?P<options>.*)$", re.UNICODE), ),
+     re.compile("^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist keys\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_list_key_versions, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist key versions\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ),
+     re.compile("^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist key versions\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_list_key, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist key\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ),
+     re.compile("^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\slist key\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_archive_key, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sarchive key\s(?P<key>\S+)\s*(?P<paths>.*)$", re.UNICODE), ),
+     re.compile("^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sarchive key\s(?P<key>\S+)\s*(?P<paths>.*)$", re.UNICODE), ),
     (ncl_retrieve_key, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sretrieve key\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ),
+     re.compile("^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sretrieve key\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_delete_key, 
-     re.compile(u"^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sdelete key\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ),
+     re.compile("^(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\sdelete key\s(?P<key>\S+)\s*(?P<options>.*)$", re.UNICODE), ),
     (ncl_space_usage, 
-     re.compile(u"^space usage\s(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\s*(?P<options>.*)$", re.UNICODE), ), ]
+     re.compile("^space usage\s(?P<collection_name>[a-z0-9][a-z0-9-]*[a-z0-9])\s*(?P<options>.*)$", re.UNICODE), ), ]
 
 _collection_name_re = re.compile(r'[a-z0-9][a-z0-9-]*[a-z0-9]$')
 _max_collection_name_size = 63
@@ -65,7 +66,7 @@ def _valid_collection_name(collection_name):
 def _parse_options(option_string):
     option_dict = dict()
     for item in option_string.split():
-        option_pair = item.split(u"=")
+        option_pair = item.split("=")
         if len(option_pair) != 2:
             raise InvalidNCLString("Unparseable option {0}".format(item))
         option_dict[option_pair[0].lower()] = option_pair[1]
@@ -83,13 +84,13 @@ def _build_list_collection(match_object, ncl_dict):
 def _collection_options(option_string, ncl_dict):
     option_dict = _parse_options(option_string)
 
-    if u"versioning" in option_dict:
-        if option_dict["versioning"].lower() == u"true":
+    if "versioning" in option_dict:
+        if option_dict["versioning"].lower() == "true":
             ncl_dict["versioning"] = True
-        elif option_dict != u"false":
+        elif option_dict != "false":
             raise InvalidNCLString("Unknown versioning {0}".format(ncl_dict))
 
-    if u"access_control" in option_dict:
+    if "access_control" in option_dict:
         ncl_dict["access_control"] = option_dict["access_control"]
 
 def _build_create_collection(match_object, ncl_dict):
@@ -224,7 +225,8 @@ def parse_ncl_string(ncl_string):
         build_function(match_object, ncl_dict)
     except InvalidNCLString:
         raise
-    except Exception, instance:
+    except Exception:
+        instance = sys.exc_info()[1]
         raise InvalidNCLString("Exception during parsing {0}".format(instance))
 
     return ncl_dict

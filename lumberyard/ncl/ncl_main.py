@@ -4,11 +4,17 @@ ncl_main.py
 
 main program for nimbusio command lnaguage
 """
+from __future__ import print_function
 import argparse
 import json
 import logging
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 import sys
+
 
 from lumberyard.http_connection import HTTPConnection, \
         UnAuthHTTPConnection, \
@@ -77,9 +83,10 @@ def _load_identity(args):
     if args.identity_file is not None:
         try:
             identity = load_identity_from_file(args.identity_file)
-        except Exception, instance:
-            raise InvalidIdentity("unable to load {0} {1}".format(
-                args.identity_file, instance))
+        except Exception:
+            instance = sys.exc_info()[1]
+            raise InvalidIdentity("unable to load {0}".format(
+                args.identity_file))
         if identity is None:
             raise InvalidIdentity("unable to parse {0}".format(
                 args.identity_file))
@@ -109,7 +116,7 @@ def _list_collections(args, identity, ncl_dict):
     collection_list = json.loads(data)
     # TODO: add an option for verbose list
     for entry in collection_list:
-        print entry["name"]
+        print(entry["name"])
 
 def _list_collection(args, identity, ncl_dict):
     method = "GET"
@@ -129,7 +136,7 @@ def _list_collection(args, identity, ncl_dict):
     data = response.read()
     http_connection.close()
     result = json.loads(data)
-    print str(result)
+    print(str(result))
 
 def _create_collection(args, identity, ncl_dict):
     raise NCLNotImplemented("_create_collection")
@@ -175,10 +182,10 @@ def _list_keys(args, identity, ncl_dict):
 
     if "key_data" in data_dict:
         for key_entry in data_dict["key_data"]:
-            print key_entry["key"], 
+            print(key_entry["key"])
     elif "prefixes" in data_dict:
         for prefix in data_dict["prefixes"]:
-            print prefix
+            print(prefix)
     else:
         raise ValueError("Unexpected return value %s" % (data_dict, ))
 
@@ -253,19 +260,19 @@ def _space_usage(args, identity, ncl_dict):
     if not result["success"]:
         raise NCLErrorResult(result["error_message"])
 
-    print
+    print()
     for day_entry in result["operational_stats"]:
-        print day_entry["day"]
+        print(day_entry["day"])
         if day_entry["archive_success"] != 0:
-            print "{0:8} archive success".format(day_entry["archive_success"])
-            print "{0:8} archive bytes".format(day_entry["success_bytes_in"])
+            print("{0:8} archive success".format(day_entry["archive_success"]))
+            print("{0:8} archive bytes".format(day_entry["success_bytes_in"]))
         if day_entry["retrieve_success"] != 0:
-            print "{0:8} retrieve success".format(day_entry["retrieve_success"])
-            print "{0:8} retrieve bytes".format(day_entry["success_bytes_out"])
+            print("{0:8} retrieve success".format(day_entry["retrieve_success"]))
+            print("{0:8} retrieve bytes".format(day_entry["success_bytes_out"]))
         if day_entry["delete_success"] != 0:
-            print "{0:8} delete success".format(day_entry["delete_success"])
+            print("{0:8} delete success".format(day_entry["delete_success"]))
         if day_entry["listmatch_success"] != 0:
-            print "{0:8} listmatch success".format(day_entry["listmatch_success"])
+            print("{0:8} listmatch success".format(day_entry["listmatch_success"]))
 
 _dispatch_table = {
     ncl_list_collections    : _list_collections,
@@ -292,7 +299,8 @@ def main():
 
     try:
         identity = _load_identity(args)
-    except InvalidIdentity, instance:
+    except InvalidIdentity:
+        instance = sys.exc_info()[1]
         log.error("invalid identity: {0}".format(instance))
         return 1
 
@@ -305,19 +313,24 @@ def main():
         try:
             ncl_dict = parse_ncl_string(line)
             _dispatch_table[ncl_dict["command"]](args, identity, ncl_dict)
-        except InvalidNCLString, instance:
+        except InvalidNCLString:
+            instance = sys.exc_info()[1]
             log.error(str(instance))
             return 1
-        except NCLErrorResult, instance:
+        except NCLErrorResult:
+            instance = sys.exc_info()[1]
             log.error(str(instance))
             return 1
-        except InvalidIdentity, instance:
+        except InvalidIdentity:
+            instance = sys.exc_info()[1]
             log.error(str(instance))
             return 1 
-        except LumberyardHTTPError, instance:
+        except LumberyardHTTPError:
+            instance = sys.exc_info()[1]
             log.error(str(instance))
             return 1 
-        except Exception, instance:
+        except Exception:
+            instance = sys.exc_info()[1]
             log.exception(line)
             return 1
 
