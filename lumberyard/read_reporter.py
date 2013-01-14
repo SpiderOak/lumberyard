@@ -12,9 +12,10 @@ Intended to be passed as the 'body' parameter to HTTPConnection.request
 Takes an open python file object and a callback functions as arguments
 The callback should take a single integer as an argument: bytes_read.
 """
+import collections
 import logging
 
-class ReadReporter(object):
+class ReadReporter(collections.Iterable):
     """
     A class that wraps a python file object (or something like him)
     and reports bytes read to a calback
@@ -28,6 +29,13 @@ class ReadReporter(object):
         self._log = logging.getLogger("ReadReporter")
         self._file_object = file_object
         self._callback = callback
+
+    def __iter__(self):
+        while True:
+            data = self.read()
+            if len(data) == 0:
+                break
+            yield data
 
     def set_callback(self, callback):
         self._callback = callback
