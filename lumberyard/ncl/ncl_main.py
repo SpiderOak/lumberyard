@@ -6,6 +6,10 @@ main program for nimbusio command lnaguage
 """
 from __future__ import print_function
 import argparse
+try:
+    from httplib import CREATED
+except ImportError:
+    from http.client import CREATED
 import json
 import logging
 try:
@@ -139,8 +143,26 @@ def _list_collection(args, identity, ncl_dict):
     print(str(result))
 
 def _create_collection(args, identity, ncl_dict):
-    raise NCLNotImplemented("_create_collection")
+    method = "POST"
+    
+    http_connection = HTTPConnection(compute_default_hostname(),
+                                     identity.user_name,
+                                     identity.auth_key,
+                                     identity.auth_key_id)
 
+    path = "/".join(["customers", identity.user_name, "collections"]) 
+    uri = compute_uri(path, action="create", name=ncl_dict["collection_name"])
+
+    response = http_connection.request(method, 
+                                       uri, 
+                                       body=None, 
+                                       expected_status=CREATED)
+        
+    data = response.read()
+    http_connection.close()
+    result = json.loads(data)
+    print(str(result))
+ 
 def _set_collection(args, identity, ncl_dict):
     raise NCLNotImplemented("_set_collection")
 

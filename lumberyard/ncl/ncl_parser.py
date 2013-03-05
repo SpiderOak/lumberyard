@@ -202,7 +202,6 @@ def parse_ncl_string(ncl_string):
     or raise InvalidNCLString
     """
     ncl_dict = {}
-    ncl_string.decode("utf-8")
 
     # first identify the command
     ncl_dict["command"] = None
