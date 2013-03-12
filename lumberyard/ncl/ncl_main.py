@@ -117,9 +117,9 @@ def _list_collections(args, identity, ncl_dict):
         
     data = response.read()
     http_connection.close()
-    collection_list = json.loads(data)
+    result = json.loads(data.decode("utf-8"))
     # TODO: add an option for verbose list
-    for entry in collection_list:
+    for entry in result:
         print(entry["name"])
 
 def _list_collection(args, identity, ncl_dict):
@@ -139,7 +139,7 @@ def _list_collection(args, identity, ncl_dict):
         
     data = response.read()
     http_connection.close()
-    result = json.loads(data)
+    result = json.loads(data.decode("utf-8"))
     print(str(result))
 
 def _create_collection(args, identity, ncl_dict):
@@ -160,7 +160,7 @@ def _create_collection(args, identity, ncl_dict):
         
     data = response.read()
     http_connection.close()
-    result = json.loads(data)
+    result = json.loads(data.decode("utf-8"))
     print(str(result))
  
 def _set_collection(args, identity, ncl_dict):
@@ -277,7 +277,7 @@ def _space_usage(args, identity, ncl_dict):
         
     data = response.read()
     http_connection.close()
-    result = json.loads(data)
+    result = json.loads(data.decode("utf-8"))
 
     if not result["success"]:
         raise NCLErrorResult(result["error_message"])
