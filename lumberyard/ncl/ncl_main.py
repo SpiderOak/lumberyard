@@ -245,7 +245,7 @@ def _retrieve_key(args, identity, ncl_dict):
         data = response.read(_read_buffer_size)
         if len(data) == 0:
             break
-        sys.stdout.write(data)
+        sys.stdout.buffer.write(data)
 
     http_connection.close()
 
