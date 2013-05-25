@@ -200,7 +200,7 @@ def _list_keys(args, identity, ncl_dict):
     
     data = response.read()
     http_connection.close()
-    data_dict = json.loads(data)
+    data_dict = json.loads(data.decode("utf-8"))
 
     if "key_data" in data_dict:
         for key_entry in data_dict["key_data"]:
